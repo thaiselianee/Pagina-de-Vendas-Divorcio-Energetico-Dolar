@@ -714,7 +714,6 @@ h2 i {
 
 .highlight-ornament {
   display: block;
-  margin-bottom: 20px;
   color: #e6c18b;
   font-family: var(--serif);
   font-size: 35px;
@@ -3357,6 +3356,13 @@ background:
     width: calc(100% - 34px);
   }
 
+
+  .hero h1 strong {
+    display: block;
+    white-space: nowrap;
+    letter-spacing: -1px;
+}
+
   /* PRIMEIRA TELA — VSL */
 
   .hero {
@@ -3409,7 +3415,7 @@ background:
 
   .hero h1 strong{
     color: #e7a743;
-    font-size: 31px;
+    font-size: 29px;
     font-weight: 700;
   }
 
@@ -3500,7 +3506,9 @@ background:
     line-height: 1.06;
     text-align: center;
   }
-
+.identification-text p{
+  font-size: 17px;
+}
   .identification-text {
     max-width: 380px;
     margin: 0 auto;
@@ -3522,9 +3530,9 @@ background:
   .identification-closing {
     max-width: 430px;
     margin: 0 auto;
-    font-size: 18px;
     text-align: center;
   }
+
 
  /* CONHEÇA O DIVÓRCIO ENERGÉTICO */
 
