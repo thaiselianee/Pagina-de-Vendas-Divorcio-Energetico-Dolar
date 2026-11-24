@@ -1887,10 +1887,11 @@ background:
 
 .price small {
   font-family: var(--sans);
-  font-size: 19px;
+  font-size: 28px;
   font-weight: 600;
   vertical-align: 15px;
   letter-spacing: 0;
+  margin-left: -30px;
 }
 
 .price sup {
@@ -3727,6 +3728,7 @@ background:
     font-style: normal;
     font-weight: 600;
     font-size: 22px;
+    display: none;
   }
 
   .receive-label {
