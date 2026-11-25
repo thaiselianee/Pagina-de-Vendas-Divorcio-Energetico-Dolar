@@ -1,6 +1,6 @@
 
 const CONFIG = {
-  checkoutUrl: "https://pay.hotmart.com/Y108408135W",
+  checkoutUrl: " https://pay.hotmart.com/Y108408135W?off=1pz8cclf",
   revealAtSeconds: 5
 };
 

@@ -280,6 +280,7 @@ h2 i {
   font-weight: 600;
 }
 
+
 .ornament-divider {
   width: min(100%, 700px);
   display: grid;
@@ -3413,7 +3414,7 @@ background:
 
   .hero h1 strong{
     color: #e7a743;
-    font-size: 29px;
+    font-size: 30px;
     font-weight: 700;
   }
 
