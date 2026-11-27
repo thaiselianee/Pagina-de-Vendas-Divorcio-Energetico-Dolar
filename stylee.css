@@ -4547,7 +4547,7 @@ background:
     padding: 24px 20px !important;
     margin: 0 !important;
 
-    background: #19070c !important;
+    background: #2b0b13 !important;
     color: #f8f3ec !important;
 
     position: relative !important;
@@ -4581,4 +4581,120 @@ background:
     font-weight: 400 !important;
     letter-spacing: 1px !important;
     text-align: center !important;
+}
+
+
+/* =========================================
+   RODAPÉ INICIAL — VSL
+   ========================================= */
+
+/* Área externa do rodapé */
+.hero .footer-initial-slot {
+    width: 100vw;
+    max-width: 100vw;
+    margin-left: calc(50% - 50vw);
+    margin-right: calc(50% - 50vw);
+
+    margin-top: 30px;
+    padding: 0;
+
+    position: relative;
+    z-index: 5;
+}
+
+.hero #footer-copyright {
+    width: 100%;
+    min-height: 8px;
+
+    margin: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: #2b0b13;
+
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+
+    box-sizing: border-box;
+    margin-bottom: -28px;
+}
+
+.hero #footer-copyright small {
+    display: block;
+
+    margin: 0;
+    padding: 0;
+
+    color: #F5E9DC;
+
+    font-family: 'Montserrat', sans-serif;
+    font-size: 13px;
+    font-weight: 400;
+
+    line-height: 1.6;
+    letter-spacing: 0.4px;
+
+    text-align: center;
+}
+
+/* Remove espaço de marca caso exista */
+.hero #footer-copyright .footer-brand {
+    display: none;
+}
+
+
+/* =========================================
+   RAIO DE LUZ PASSANDO PELA FRASE
+   ========================================= */
+
+.hero-heading h1 strong {
+    display: inline-block;
+
+    background-image:
+        linear-gradient(
+            105deg,
+            transparent 43%,
+            rgba(255, 230, 170, 0.35) 47%,
+            #FFF9E8 49%,
+            #FFFFFF 50%,
+            #FFF0C2 51%,
+            rgba(255, 220, 140, 0.7) 53%,
+            transparent 57%
+        ),
+        linear-gradient(
+            110deg,
+            #D99A2B,
+            #E8AD3D
+        );
+
+    background-size: 250% 100%, 100% 100%;
+    background-position: -150% 50%, center;
+
+    background-repeat: no-repeat;
+
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+
+    animation: lightRayPass 3.5s linear infinite;
+}
+
+
+@keyframes lightRayPass {
+    0% {
+        background-position: 150% 50%, center;
+    }
+
+    65%, 100% {
+        background-position: -150% 50%, center;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .hero-heading h1 strong {
+        animation: none;
+    }
 }

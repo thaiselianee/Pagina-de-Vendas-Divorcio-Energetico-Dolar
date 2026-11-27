@@ -1,6 +1,6 @@
 
 const CONFIG = {
-  checkoutUrl: " https://pay.hotmart.com/Y108408135W?off=1pz8cclf",
+  checkoutUrl: "https://pay.hotmart.com/Y108408135W?off=1pz8cclf",
   revealAtSeconds: 5
 };
 
@@ -16,6 +16,12 @@ const miniPlayer = document.querySelector("#miniPlayer");
 const miniPlay = document.querySelector("#miniPlay");
 const restoreVideo = document.querySelector("#restoreVideo");
 const unlockMessage = document.querySelector("#unlockMessage");
+
+/* RODAPÉ */
+
+const footerCopyright = document.querySelector("#footer-copyright");
+const footerInitialSlot = document.querySelector("#footer-initial-slot");
+const footerFinalSlot = document.querySelector("#footer-final-slot");
 
 const checkoutButtons = document.querySelectorAll(".checkout-button");
 const year = document.querySelector(".footer .year");
@@ -57,6 +63,12 @@ function unlockPage() {
 
   lockedContent.classList.add("unlocked");
   lockedContent.setAttribute("aria-hidden", "false");
+
+  /* MOVE O RODAPÉ PARA O FINAL DO CONTEÚDO */
+
+  if (footerCopyright && footerFinalSlot) {
+    footerFinalSlot.appendChild(footerCopyright);
+  }
 
   if (
     miniPlayer &&
@@ -407,8 +419,6 @@ function initializeScrollReveal() {
     ".faq-section .section-heading",
     ".faq-list details",
 
-
-
   ];
 
   const elements = document.querySelectorAll(
@@ -545,16 +555,16 @@ function initializeThreeMoments() {
 
     ease: "none",
 
-  scrollTrigger: {
-    trigger: section,
-    start: "top top",
-    end: () => `+=${getDistance() * 0.20}`,
-    pin: section,
-    pinSpacing: true,
-    scrub: 0.5,
-    anticipatePin: 1,
-    invalidateOnRefresh: true
-  }
+    scrollTrigger: {
+      trigger: section,
+      start: "top top",
+      end: () => `+=${getDistance() * 0.20}`,
+      pin: section,
+      pinSpacing: true,
+      scrub: 0.5,
+      anticipatePin: 1,
+      invalidateOnRefresh: true
+    }
 
   });
 
