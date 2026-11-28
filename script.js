@@ -1,14 +1,11 @@
-
 const CONFIG = {
   checkoutUrl: "https://pay.hotmart.com/Y108408135W?off=1pz8cclf",
-  revealAtSeconds: 5
 };
 
 /* =========================================
    ELEMENTOS
 ========================================= */
 
-const video = document.querySelector("#vslVideo");
 const videoFrame = document.querySelector("#videoFrame");
 
 const lockedContent = document.querySelector("#lockedContent");
@@ -27,17 +24,23 @@ const checkoutButtons = document.querySelectorAll(".checkout-button");
 const year = document.querySelector(".footer .year");
 
 /* =========================================
-   ESTADO
+   YOUTUBE PLAYER
+========================================= */
+
+let player = null;
+let playerReady = false;
+
+let progressCheckTimer = null;
+
+let lastAllowedTime = 0;
+let lastPlaybackTime = 0;
+
+/* =========================================
+   ESTADO GERAL
 ========================================= */
 
 let contentUnlocked = false;
 let miniPlayerDismissed = false;
-
-let lastAllowedTime = 0;
-let lastPlaybackTime = 0;
-let watchedSeconds = 0;
-
-let isRestoringPosition = false;
 
 let threeMomentsAnimation = null;
 let threeMomentsInitialized = false;
@@ -49,6 +52,20 @@ let resizeTimer = null;
 
 if (year) {
   year.textContent = new Date().getFullYear();
+}
+
+/* =========================================
+   VERIFICAR REPRODUÇÃO DO YOUTUBE
+========================================= */
+
+function isVideoPlaying() {
+
+  return (
+    playerReady &&
+    player &&
+    player.getPlayerState() === YT.PlayerState.PLAYING
+  );
+
 }
 
 /* =========================================
@@ -70,15 +87,17 @@ function unlockPage() {
     footerFinalSlot.appendChild(footerCopyright);
   }
 
+  /* ATIVA MINI PLAYER SE O VÍDEO ESTIVER TOCANDO */
+
   if (
     miniPlayer &&
     !miniPlayerDismissed &&
-    video &&
-    !video.paused &&
-    !video.ended
+    isVideoPlaying()
   ) {
     miniPlayer.classList.add("active");
   }
+
+  /* MENSAGEM DE LIBERAÇÃO */
 
   if (unlockMessage) {
 
@@ -97,15 +116,15 @@ function unlockPage() {
 }
 
 /* =========================================
-   ATUALIZAR MINI PLAYER
+   ATUALIZAR BOTÕES DO MINI PLAYER
 ========================================= */
 
 function updatePlayButtons() {
 
-  if (!video || !miniPlay) return;
+  if (!playerReady || !miniPlay) return;
 
   miniPlay.textContent =
-    !video.paused && !video.ended ? "Ⅱ" : "▶";
+    isVideoPlaying() ? "Ⅱ" : "▶";
 
 }
 
@@ -113,94 +132,41 @@ function updatePlayButtons() {
    CONTROLE DE AVANÇO DO VÍDEO
 ========================================= */
 
-function restoreAllowedPosition() {
+function checkVideoProgress() {
 
-  if (!video || isRestoringPosition) return;
+  if (!playerReady || !isVideoPlaying()) return;
 
-  isRestoringPosition = true;
-  video.currentTime = lastAllowedTime;
+  const currentTime = player.getCurrentTime();
 
-}
+  const difference = currentTime - lastPlaybackTime;
 
-if (video) {
+  /*
+    Detecta saltos bruscos para frente.
+    Se a pessoa tentar avançar, volta
+    para a última posição permitida.
+  */
 
-  video.addEventListener("seeking", () => {
+  if (difference > 2.5) {
 
-    if (isRestoringPosition) return;
+    player.seekTo(lastAllowedTime, true);
 
-    const difference =
-      Math.abs(video.currentTime - lastAllowedTime);
+    lastPlaybackTime = lastAllowedTime;
 
-    if (difference > 0.4) {
-      restoreAllowedPosition();
-    }
+    return;
 
-  });
+  }
 
-  video.addEventListener("seeked", () => {
+  /*
+    Atualiza a última posição assistida.
+  */
 
-    if (isRestoringPosition) {
-      isRestoringPosition = false;
-    }
+  if (difference >= 0 && currentTime > lastAllowedTime) {
 
-    lastPlaybackTime = video.currentTime;
+    lastAllowedTime = currentTime;
 
-  });
+  }
 
-  video.addEventListener("timeupdate", () => {
-
-    if (!video.seeking && !isRestoringPosition) {
-
-      const currentTime = video.currentTime;
-      const difference = currentTime - lastPlaybackTime;
-
-      if (
-        !video.paused &&
-        difference > 0 &&
-        difference <= 1.5
-      ) {
-        watchedSeconds += difference;
-      }
-
-      if (currentTime > lastAllowedTime) {
-        lastAllowedTime = currentTime;
-      }
-
-      lastPlaybackTime = currentTime;
-
-    }
-
-    if (watchedSeconds >= CONFIG.revealAtSeconds) {
-      unlockPage();
-    }
-
-    updateVideoState();
-
-  });
-
-  video.addEventListener("play", () => {
-
-    lastPlaybackTime = video.currentTime;
-    updateVideoState();
-
-  });
-
-  video.addEventListener("pause", () => {
-
-    lastPlaybackTime = video.currentTime;
-    updateVideoState();
-
-  });
-
-  video.addEventListener("loadedmetadata", () => {
-
-    lastAllowedTime = 0;
-    lastPlaybackTime = 0;
-    watchedSeconds = 0;
-
-    updatePlayButtons();
-
-  });
+  lastPlaybackTime = currentTime;
 
 }
 
@@ -210,28 +176,31 @@ if (video) {
 
 function updateVideoState() {
 
-  if (!video) return;
-
-  if (watchedSeconds >= CONFIG.revealAtSeconds) {
-    unlockPage();
-  }
+  if (!playerReady) return;
 
   if (
     contentUnlocked &&
     miniPlayer &&
     videoFrame &&
-    !video.paused &&
-    !video.ended &&
+    isVideoPlaying() &&
     !miniPlayerDismissed
   ) {
 
     const frameRect = videoFrame.getBoundingClientRect();
 
     if (frameRect.bottom < 0 || frameRect.top < 0) {
+
       miniPlayer.classList.add("active");
+
     } else {
+
       miniPlayer.classList.remove("active");
+
     }
+
+  } else if (miniPlayer && !isVideoPlaying()) {
+
+    miniPlayer.classList.remove("active");
 
   }
 
@@ -240,28 +209,174 @@ function updateVideoState() {
 }
 
 /* =========================================
+   YOUTUBE - PLAYER PRONTO
+========================================= */
+
+
+function onYouTubePlayerReady(event) {
+
+  playerReady = true;
+
+  lastAllowedTime = 0;
+  lastPlaybackTime = 0;
+
+  // INICIA O VÍDEO AUTOMATICAMENTE SEM SOM
+
+  player.mute();
+
+  player.playVideo();
+
+  updatePlayButtons();
+
+  console.log("Player do YouTube carregado com sucesso.");
+
+}
+
+
+/* =========================================
+   YOUTUBE - MUDANÇA DE ESTADO
+========================================= */
+
+function onYouTubePlayerStateChange(event) {
+
+  /* VÍDEO COMEÇOU A REPRODUZIR */
+
+  if (event.data === YT.PlayerState.PLAYING) {
+
+    lastPlaybackTime = player.getCurrentTime();
+
+    clearInterval(progressCheckTimer);
+
+    progressCheckTimer = setInterval(() => {
+
+      checkVideoProgress();
+
+    }, 500);
+
+  }
+
+  /* VÍDEO PAUSADO */
+
+  if (event.data === YT.PlayerState.PAUSED) {
+
+    clearInterval(progressCheckTimer);
+
+    lastPlaybackTime = player.getCurrentTime();
+
+  }
+
+  /* VÍDEO FINALIZADO */
+
+  if (event.data === YT.PlayerState.ENDED) {
+
+    clearInterval(progressCheckTimer);
+
+    lastPlaybackTime = player.getDuration();
+    lastAllowedTime = player.getDuration();
+
+    /*
+      LIBERA TODAS AS PRÓXIMAS SEÇÕES
+      SOMENTE QUANDO O YOUTUBE FINALIZAR
+    */
+
+    unlockPage();
+
+    if (miniPlayer) {
+      miniPlayer.classList.remove("active");
+    }
+
+  }
+
+  /* VÍDEO ENTROU EM BUFFERING */
+
+  if (event.data === YT.PlayerState.BUFFERING) {
+
+    clearInterval(progressCheckTimer);
+
+  }
+
+  updateVideoState();
+
+}
+
+/* =========================================
+   INICIALIZAR PLAYER DO YOUTUBE
+========================================= */
+
+function initializeYouTubePlayer() {
+
+  if (
+    player ||
+    !document.querySelector("#vslVideo")
+  ) {
+    return;
+  }
+
+  player = new YT.Player("vslVideo", {
+
+    events: {
+
+      onReady: onYouTubePlayerReady,
+
+      onStateChange: onYouTubePlayerStateChange
+
+    }
+
+  });
+
+}
+
+/* =========================================
+   CARREGAR YOUTUBE IFRAME API
+========================================= */
+
+window.onYouTubeIframeAPIReady = function () {
+
+  initializeYouTubePlayer();
+
+};
+
+/* VERIFICA SE A API JÁ ESTÁ CARREGADA */
+
+if (window.YT && window.YT.Player) {
+
+  initializeYouTubePlayer();
+
+} else {
+
+  if (!document.querySelector("#youtube-iframe-api")) {
+
+    const youtubeScript = document.createElement("script");
+
+    youtubeScript.id = "youtube-iframe-api";
+
+    youtubeScript.src =
+      "https://www.youtube.com/iframe_api";
+
+    document.head.appendChild(youtubeScript);
+
+  }
+
+}
+
+/* =========================================
    MINI PLAYER
 ========================================= */
 
-if (miniPlay && video) {
+if (miniPlay) {
 
-  miniPlay.addEventListener("click", async () => {
+  miniPlay.addEventListener("click", () => {
 
-    if (video.paused) {
+    if (!playerReady) return;
 
-      try {
-        await video.play();
-      } catch (error) {
+    if (isVideoPlaying()) {
 
-        console.error(
-          "Não foi possível reproduzir o vídeo:",
-          error
-        );
-
-      }
+      player.pauseVideo();
 
     } else {
-      video.pause();
+
+      player.playVideo();
+
     }
 
     updatePlayButtons();
@@ -270,21 +385,30 @@ if (miniPlay && video) {
 
 }
 
+/* =========================================
+   RESTAURAR VÍDEO ORIGINAL
+========================================= */
+
 if (restoreVideo && videoFrame && miniPlayer) {
 
   restoreVideo.addEventListener("click", () => {
 
     miniPlayerDismissed = true;
+
     miniPlayer.classList.remove("active");
 
     videoFrame.scrollIntoView({
+
       behavior: "smooth",
+
       block: "center"
+
     });
 
     window.setTimeout(() => {
 
       miniPlayerDismissed = false;
+
       updateVideoState();
 
     }, 900);
@@ -304,26 +428,6 @@ window.addEventListener("scroll", () => {
 }, {
   passive: true
 });
-
-/* =========================================
-   FINAL DO VÍDEO
-========================================= */
-
-if (video) {
-
-  video.addEventListener("ended", () => {
-
-    unlockPage();
-
-    if (miniPlayer) {
-      miniPlayer.classList.remove("active");
-    }
-
-    updatePlayButtons();
-
-  });
-
-}
 
 /* =========================================
    BOTÕES DE COMPRA
@@ -365,7 +469,9 @@ checkoutButtons.forEach((button) => {
 if (videoFrame) {
 
   videoFrame.addEventListener("contextmenu", (event) => {
+
     event.preventDefault();
+
   });
 
   videoFrame.addEventListener("keydown", (event) => {
@@ -376,7 +482,9 @@ if (videoFrame) {
       event.key === "Home" ||
       event.key === "End"
     ) {
+
       event.preventDefault();
+
     }
 
   });
@@ -422,9 +530,11 @@ function initializeScrollReveal() {
   ];
 
   const elements = document.querySelectorAll(
+
     revealSelectors
       .map(selector => `#lockedContent ${selector}`)
       .join(",")
+
   );
 
   elements.forEach((element, index) => {
@@ -462,7 +572,9 @@ function initializeScrollReveal() {
   });
 
   elements.forEach(element => {
+
     observer.observe(element);
+
   });
 
   /* INICIALIZA OS TRÊS MOMENTOS */
@@ -488,6 +600,7 @@ function initializeScrollReveal() {
 function initializeThreeMoments() {
 
   const section = document.querySelector("#tres-momentos");
+
   const track = section?.querySelector(".three-moments-track");
 
   if (!section || !track) return;
@@ -510,6 +623,7 @@ function initializeThreeMoments() {
   if (threeMomentsAnimation) {
 
     threeMomentsAnimation.scrollTrigger?.kill();
+
     threeMomentsAnimation.kill();
 
     threeMomentsAnimation = null;
@@ -519,7 +633,9 @@ function initializeThreeMoments() {
   /* REINICIA A POSIÇÃO DOS CARDS */
 
   gsap.set(track, {
+
     x: 0
+
   });
 
   /* CALCULA A DISTÂNCIA REAL DO MOVIMENTO */
@@ -527,8 +643,11 @@ function initializeThreeMoments() {
   function getDistance() {
 
     return Math.max(
+
       0,
+
       track.scrollWidth - section.clientWidth
+
     );
 
   }
@@ -536,11 +655,17 @@ function initializeThreeMoments() {
   if (getDistance() <= 0) {
 
     console.warn(
+
       "Os cards não possuem largura horizontal suficiente.",
+
       {
+
         larguraDosCards: track.scrollWidth,
+
         larguraDaSecao: section.clientWidth
+
       }
+
     );
 
     return;
@@ -556,14 +681,23 @@ function initializeThreeMoments() {
     ease: "none",
 
     scrollTrigger: {
+
       trigger: section,
+
       start: "top top",
+
       end: () => `+=${getDistance() * 0.20}`,
+
       pin: section,
+
       pinSpacing: true,
+
       scrub: 0.5,
+
       anticipatePin: 1,
+
       invalidateOnRefresh: true
+
     }
 
   });
